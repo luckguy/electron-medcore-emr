@@ -12,7 +12,11 @@
       "Bash(rm:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git remote add:*)",
+      "Bash(git remote remove:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh auth:*)"
     ],
     "deny": [],
     "ask": []
