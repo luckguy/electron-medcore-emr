@@ -12,6 +12,7 @@ import MedicalRecords from './components/MedicalRecords/MedicalRecords';
 import Prescriptions from './components/Prescriptions/Prescriptions';
 import Reports from './components/Reports/Reports';
 import './App.css';
+import { DataSourceProvider } from './context/DataSourceContext';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -94,33 +95,35 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <Sidebar 
-        currentView={currentView} 
-        onNavigate={handleNavigation} 
-      />
-      <div className="main-content">
-        <Header 
-          title={getPageTitle()} 
-          breadcrumbs={getBreadcrumbs()}
+    <DataSourceProvider>
+      <div className="app professional">
+        <Sidebar
+          currentView={currentView}
+          onNavigate={handleNavigation}
         />
-        <div className="content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/patients" element={<PatientList />} />
-            <Route path="/patients/new" element={<PatientForm />} />
-            <Route path="/patients/edit/:id" element={<PatientForm />} />
-            <Route path="/patients/:id" element={<PatientDetail />} />
-            <Route path="/appointments" element={<AppointmentList />} />
-            <Route path="/appointments/new" element={<AppointmentForm />} />
-            <Route path="/appointments/edit/:id" element={<AppointmentForm />} />
-            <Route path="/medical-records" element={<MedicalRecords />} />
-            <Route path="/prescriptions" element={<Prescriptions />} />
-            <Route path="/reports" element={<Reports />} />
-          </Routes>
+        <div className="main-content">
+          <Header
+            title={getPageTitle()}
+            breadcrumbs={getBreadcrumbs()}
+          />
+          <div className="content">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/patients" element={<PatientList />} />
+              <Route path="/patients/new" element={<PatientForm />} />
+              <Route path="/patients/edit/:id" element={<PatientForm />} />
+              <Route path="/patients/:id" element={<PatientDetail />} />
+              <Route path="/appointments" element={<AppointmentList />} />
+              <Route path="/appointments/new" element={<AppointmentForm />} />
+              <Route path="/appointments/edit/:id" element={<AppointmentForm />} />
+              <Route path="/medical-records" element={<MedicalRecords />} />
+              <Route path="/prescriptions" element={<Prescriptions />} />
+              <Route path="/reports" element={<Reports />} />
+            </Routes>
+          </div>
         </div>
       </div>
-    </div>
+    </DataSourceProvider>
   );
 }
 

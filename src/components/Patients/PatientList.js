@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faPen, faTrash, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+
 import { format } from 'date-fns';
+import { patients as mockPatients } from '../../data/mockData';
+
+import { useContext } from 'react';
+import { DataSourceContext } from '../../context/DataSourceContext';
+
 
 const PatientList = () => {
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
+  const { useMockData } = useContext(DataSourceContext);
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
@@ -23,9 +33,9 @@ const PatientList = () => {
         const phone = patient.phone?.toLowerCase() || '';
         const email = patient.email?.toLowerCase() || '';
         const search = searchTerm.toLowerCase();
-        
-        return fullName.includes(search) || 
-               phone.includes(search) || 
+
+        return fullName.includes(search) ||
+               phone.includes(search) ||
                email.includes(search);
       });
       setFilteredPatients(filtered);
@@ -36,34 +46,12 @@ const PatientList = () => {
     try {
       setLoading(true);
       setError('');
-      
-      if (window.electronAPI) {
+
+      if (window.electronAPI && !useMockData) {
         const patientsData = await window.electronAPI.patients.getAll();
-        setPatients(patientsData);
+        setPatients(Array.isArray(patientsData) && patientsData.length ? patientsData : mockPatients);
       } else {
         // Mock data for web development
-        const mockPatients = [
-          {
-            id: '1',
-            first_name: 'John',
-            last_name: 'Doe',
-            date_of_birth: '1985-03-15',
-            gender: 'Male',
-            phone: '(555) 123-4567',
-            email: 'john.doe@email.com',
-            created_at: '2024-01-15T10:30:00Z'
-          },
-          {
-            id: '2',
-            first_name: 'Sarah',
-            last_name: 'Johnson',
-            date_of_birth: '1992-07-22',
-            gender: 'Female',
-            phone: '(555) 234-5678',
-            email: 'sarah.johnson@email.com',
-            created_at: '2024-01-16T14:20:00Z'
-          }
-        ];
         setPatients(mockPatients);
       }
     } catch (error) {
@@ -96,11 +84,11 @@ const PatientList = () => {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -120,15 +108,15 @@ const PatientList = () => {
           <i>⚠️</i> {error}
         </div>
       )}
-      
+
       <div className="card">
         <div className="card-header">
           <h3>Patient Management</h3>
           <Link to="/patients/new" className="btn btn-primary">
-            🆕 Add New Patient
+            <FontAwesomeIcon icon={faUserPlus} /> Add New Patient
           </Link>
         </div>
-        
+
         <div className="card-body">
           <div className="search-container">
             <input
@@ -138,9 +126,9 @@ const PatientList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <span className="search-icon">🔍</span>
+            <span className="search-icon" aria-hidden="true">🔍</span>
           </div>
-          
+
           {filteredPatients.length === 0 ? (
             <div className="text-center mt-3">
               <p>No patients found.</p>
@@ -166,8 +154,8 @@ const PatientList = () => {
                   {filteredPatients.map(patient => (
                     <tr key={patient.id}>
                       <td>
-                        <Link 
-                          to={`/patients/${patient.id}`} 
+                        <Link
+                          to={`/patients/${patient.id}`}
                           className="patient-link"
                         >
                           {patient.first_name} {patient.last_name}
@@ -182,29 +170,29 @@ const PatientList = () => {
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <Link 
+                          <Link
                             to={`/patients/${patient.id}`}
                             className="btn btn-sm btn-outline"
                             title="View Details"
-                          >
-                            👁️
+>
+                            <FontAwesomeIcon icon={faEye} />
                           </Link>
-                          <Link 
+                          <Link
                             to={`/patients/edit/${patient.id}`}
                             className="btn btn-sm btn-secondary"
                             title="Edit Patient"
-                          >
-                            ✏️
+>
+                            <FontAwesomeIcon icon={faPen} />
                           </Link>
                           <button
                             onClick={() => handleDeletePatient(
-                              patient.id, 
+                              patient.id,
                               `${patient.first_name} ${patient.last_name}`
                             )}
                             className="btn btn-sm btn-danger"
                             title="Delete Patient"
-                          >
-                            🗑️
+>
+                            <FontAwesomeIcon icon={faTrash} />
                           </button>
                         </div>
                       </td>
@@ -216,7 +204,7 @@ const PatientList = () => {
           )}
         </div>
       </div>
-      
+
       <div className="patient-stats">
         <div className="card">
           <div className="card-body">
@@ -230,7 +218,7 @@ const PatientList = () => {
               {searchTerm && (
                 <div className="stat-item">
                   <strong>Search:</strong> "{searchTerm}"
-                  <button 
+                  <button
                     onClick={() => setSearchTerm('')}
                     className="btn btn-sm btn-outline ml-1"
                   >

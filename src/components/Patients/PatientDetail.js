@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCalendarPlus, faPen, faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
+
 import { format } from 'date-fns';
+import { useContext } from 'react';
+import { DataSourceContext } from '../../context/DataSourceContext';
+
+import { patients as mockPatients, medicalRecords as mockMedicalRecords, prescriptions as mockPrescriptions } from '../../data/mockData';
+
 
 const PatientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [patient, setPatient] = useState(null);
   const [medicalRecords, setMedicalRecords] = useState([]);
+  const { useMockData } = useContext(DataSourceContext);
+
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -20,38 +30,23 @@ const PatientDetail = () => {
     try {
       setLoading(true);
       setError('');
-      
-      if (window.electronAPI) {
+
+      if (window.electronAPI && !useMockData) {
         const [patientData, recordsData, prescriptionsData] = await Promise.all([
           window.electronAPI.patients.getById(id),
           window.electronAPI.medicalRecords.getByPatient(id),
           window.electronAPI.prescriptions.getByPatient(id)
         ]);
-        
+
         setPatient(patientData);
         setMedicalRecords(recordsData || []);
         setPrescriptions(prescriptionsData || []);
       } else {
         // Mock data for web development
-        const mockPatient = {
-          id: id,
-          first_name: 'John',
-          last_name: 'Doe',
-          date_of_birth: '1985-03-15',
-          gender: 'Male',
-          phone: '(555) 123-4567',
-          email: 'john.doe@email.com',
-          address: '123 Main St, Anytown, ST 12345',
-          emergency_contact_name: 'Jane Doe',
-          emergency_contact_phone: '(555) 987-6543',
-          insurance_provider: 'Blue Cross Blue Shield',
-          insurance_policy_number: 'BC123456789',
-          created_at: '2024-01-15T10:30:00Z',
-          updated_at: '2024-01-15T10:30:00Z'
-        };
-        setPatient(mockPatient);
-        setMedicalRecords([]);
-        setPrescriptions([]);
+        const p = mockPatients.find(p => p.id === id);
+        setPatient(p || null);
+        setMedicalRecords(mockMedicalRecords.filter(r => r.patient_id === id));
+        setPrescriptions(mockPrescriptions.filter(rx => rx.patient_id === id));
       }
     } catch (error) {
       console.error('Error loading patient data:', error);
@@ -66,18 +61,18 @@ const PatientDetail = () => {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
   const handleDeletePatient = async () => {
     if (window.confirm(`Are you sure you want to delete patient ${patient.first_name} ${patient.last_name}? This action cannot be undone.`)) {
       try {
-        if (window.electronAPI) {
+        if (window.electronAPI && !useMockData) {
           await window.electronAPI.patients.delete(id);
         }
         navigate('/patients');
@@ -129,23 +124,23 @@ const PatientDetail = () => {
             </div>
           </div>
           <div className="patient-actions">
-            <Link 
+            <Link
               to={`/appointments/new?patientId=${patient.id}`}
               className="btn btn-success btn-sm"
             >
-              📅 Schedule Appointment
+              <FontAwesomeIcon icon={faCalendarPlus} /> Schedule Appointment
             </Link>
-            <Link 
+            <Link
               to={`/patients/edit/${patient.id}`}
               className="btn btn-secondary btn-sm"
             >
-              ✏️ Edit
+              <FontAwesomeIcon icon={faPen} /> Edit
             </Link>
             <button
               onClick={handleDeletePatient}
               className="btn btn-danger btn-sm"
             >
-              🗑️ Delete
+              <FontAwesomeIcon icon={faTrash} /> Delete
             </button>
           </div>
         </div>
@@ -173,7 +168,7 @@ const PatientDetail = () => {
             Prescriptions ({prescriptions.length})
           </button>
         </div>
-        
+
         <div className="card-body">
           {activeTab === 'overview' && (
             <div className="patient-overview">
@@ -199,7 +194,7 @@ const PatientDetail = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="overview-section">
                   <h4>Contact Information</h4>
                   <div className="info-grid">
@@ -217,7 +212,7 @@ const PatientDetail = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="overview-section">
                   <h4>Emergency Contact</h4>
                   <div className="info-grid">
@@ -231,7 +226,7 @@ const PatientDetail = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="overview-section">
                   <h4>Insurance Information</h4>
                   <div className="info-grid">
@@ -246,7 +241,7 @@ const PatientDetail = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="overview-footer">
                 <div className="info-item">
                   <label>Patient Since:</label>
@@ -259,22 +254,22 @@ const PatientDetail = () => {
               </div>
             </div>
           )}
-          
+
           {activeTab === 'medical-records' && (
             <div className="medical-records-tab">
               <div className="tab-header-actions">
-                <Link 
+                <Link
                   to={`/medical-records/new?patientId=${patient.id}`}
                   className="btn btn-primary btn-sm"
                 >
                   🆕 Add Medical Record
                 </Link>
               </div>
-              
+
               {medicalRecords.length === 0 ? (
                 <div className="empty-state">
                   <p>No medical records found for this patient.</p>
-                  <Link 
+                  <Link
                     to={`/medical-records/new?patientId=${patient.id}`}
                     className="btn btn-primary"
                   >
@@ -308,22 +303,22 @@ const PatientDetail = () => {
               )}
             </div>
           )}
-          
+
           {activeTab === 'prescriptions' && (
             <div className="prescriptions-tab">
               <div className="tab-header-actions">
-                <Link 
+                <Link
                   to={`/prescriptions/new?patientId=${patient.id}`}
                   className="btn btn-primary btn-sm"
                 >
                   🆕 Add Prescription
                 </Link>
               </div>
-              
+
               {prescriptions.length === 0 ? (
                 <div className="empty-state">
                   <p>No prescriptions found for this patient.</p>
-                  <Link 
+                  <Link
                     to={`/prescriptions/new?patientId=${patient.id}`}
                     className="btn btn-primary"
                   >

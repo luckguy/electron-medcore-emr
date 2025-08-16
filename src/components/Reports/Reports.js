@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPrint } from '@fortawesome/free-solid-svg-icons';
+
+import { patients as mockPatients, appointments as mockAppointments } from '../../data/mockData';
+
 
 const Reports = () => {
   const [reportData, setReportData] = useState({
@@ -22,14 +27,14 @@ const Reports = () => {
   const loadReportData = async () => {
     try {
       setLoading(true);
-      
+
       if (window.electronAPI) {
         const [patientsData, appointmentsData, dashboardStats] = await Promise.all([
           window.electronAPI.patients.getAll(),
           window.electronAPI.appointments.getAll(),
           window.electronAPI.dashboard.getStats()
         ]);
-        
+
         setReportData({
           patients: patientsData || [],
           appointments: appointmentsData || [],
@@ -38,25 +43,9 @@ const Reports = () => {
       } else {
         // Mock data for web development
         setReportData({
-          patients: [
-            { id: '1', first_name: 'John', last_name: 'Doe', created_at: '2024-01-15T10:30:00Z' },
-            { id: '2', first_name: 'Sarah', last_name: 'Johnson', created_at: '2024-01-16T14:20:00Z' }
-          ],
-          appointments: [
-            {
-              id: '1',
-              appointment_date: '2024-02-20',
-              status: 'completed',
-              first_name: 'John',
-              last_name: 'Doe'
-            }
-          ],
-          stats: {
-            totalPatients: 156,
-            todaysAppointments: 8,
-            upcomingAppointments: 23,
-            activePrescriptions: 45
-          }
+          patients: mockPatients,
+          appointments: mockAppointments,
+          stats: { totalPatients: mockPatients.length, todaysAppointments: 0, upcomingAppointments: mockAppointments.filter(a=>a.status==='scheduled').length, activePrescriptions: 0 }
         });
       }
     } catch (error) {
@@ -76,12 +65,12 @@ const Reports = () => {
   const getPatientRegistrationStats = () => {
     const startDate = new Date(dateRange.startDate);
     const endDate = new Date(dateRange.endDate);
-    
+
     const patientsInRange = reportData.patients.filter(patient => {
       const createdDate = new Date(patient.created_at);
       return createdDate >= startDate && createdDate <= endDate;
     });
-    
+
     return {
       totalInRange: patientsInRange.length,
       totalOverall: reportData.patients.length
@@ -91,12 +80,12 @@ const Reports = () => {
   const getAppointmentStats = () => {
     const startDate = new Date(dateRange.startDate);
     const endDate = new Date(dateRange.endDate);
-    
+
     const appointmentsInRange = reportData.appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.appointment_date);
       return appointmentDate >= startDate && appointmentDate <= endDate;
     });
-    
+
     const stats = {
       total: appointmentsInRange.length,
       completed: appointmentsInRange.filter(a => a.status === 'completed').length,
@@ -104,13 +93,13 @@ const Reports = () => {
       scheduled: appointmentsInRange.filter(a => a.status === 'scheduled').length,
       noShow: appointmentsInRange.filter(a => a.status === 'no-show').length
     };
-    
+
     return stats;
   };
 
   const generatePatientReport = () => {
     const stats = getPatientRegistrationStats();
-    
+
     return (
       <div className="report-content">
         <h4>Patient Registration Report</h4>
@@ -122,7 +111,7 @@ const Reports = () => {
             <strong>Total Patients:</strong> {stats.totalOverall}
           </div>
         </div>
-        
+
         <div className="patient-list-report">
           <h5>Patient List</h5>
           <div className="table-responsive">
@@ -154,7 +143,7 @@ const Reports = () => {
 
   const generateAppointmentReport = () => {
     const stats = getAppointmentStats();
-    
+
     return (
       <div className="report-content">
         <h4>Appointment Report</h4>
@@ -172,13 +161,13 @@ const Reports = () => {
             <strong>No Show:</strong> {stats.noShow}
           </div>
         </div>
-        
+
         {stats.total > 0 && (
           <div className="completion-rate">
             <strong>Completion Rate:</strong> {((stats.completed / stats.total) * 100).toFixed(1)}%
           </div>
         )}
-        
+
         <div className="appointment-list-report">
           <h5>Appointment Details</h5>
           <div className="table-responsive">
@@ -227,11 +216,11 @@ const Reports = () => {
   const generateOverviewReport = () => {
     const patientStats = getPatientRegistrationStats();
     const appointmentStats = getAppointmentStats();
-    
+
     return (
       <div className="report-content">
         <h4>Practice Overview Report</h4>
-        
+
         <div className="overview-stats-grid">
           <div className="overview-stat-card">
             <h5>Patients</h5>
@@ -239,7 +228,7 @@ const Reports = () => {
             <div className="stat-label">Total Registered</div>
             <div className="stat-detail">{patientStats.totalInRange} new this period</div>
           </div>
-          
+
           <div className="overview-stat-card">
             <h5>Appointments</h5>
             <div className="stat-number">{appointmentStats.total}</div>
@@ -248,14 +237,14 @@ const Reports = () => {
               {appointmentStats.completed} completed ({appointmentStats.total > 0 ? ((appointmentStats.completed / appointmentStats.total) * 100).toFixed(0) : 0}%)
             </div>
           </div>
-          
+
           <div className="overview-stat-card">
             <h5>Today's Schedule</h5>
             <div className="stat-number">{reportData.stats?.todaysAppointments || 0}</div>
             <div className="stat-label">Appointments Today</div>
             <div className="stat-detail">{reportData.stats?.upcomingAppointments || 0} upcoming</div>
           </div>
-          
+
           <div className="overview-stat-card">
             <h5>Prescriptions</h5>
             <div className="stat-number">{reportData.stats?.activePrescriptions || 0}</div>
@@ -263,7 +252,7 @@ const Reports = () => {
             <div className="stat-detail">System-wide</div>
           </div>
         </div>
-        
+
         <div className="overview-summary">
           <h5>Summary</h5>
           <ul>
@@ -308,10 +297,10 @@ const Reports = () => {
         <div className="card-header">
           <h3>Reports & Analytics</h3>
           <button onClick={handlePrint} className="btn btn-secondary">
-            🖶️ Print Report
+            <FontAwesomeIcon icon={faPrint} /> Print Report
           </button>
         </div>
-        
+
         <div className="card-body">
           {/* Report Controls */}
           <div className="report-controls">
@@ -327,7 +316,7 @@ const Reports = () => {
                 <option value="appointments">Appointment Report</option>
               </select>
             </div>
-            
+
             <div className="control-group">
               <label className="form-label">Date Range:</label>
               <div className="date-range-inputs">
@@ -346,7 +335,7 @@ const Reports = () => {
                 />
               </div>
             </div>
-            
+
             <div className="control-group">
               <label className="form-label">Quick Select:</label>
               <div className="quick-date-buttons">
@@ -383,7 +372,7 @@ const Reports = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Report Content */}
           <div className="report-container">
             {renderSelectedReport()}

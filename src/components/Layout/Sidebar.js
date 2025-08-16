@@ -1,4 +1,6 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartBar, faUsers, faCalendarAlt, faClipboardList, faPills, faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 const Sidebar = ({ currentView, onNavigate }) => {
   const menuItems = [
@@ -6,37 +8,37 @@ const Sidebar = ({ currentView, onNavigate }) => {
       id: 'dashboard',
       label: 'Dashboard',
       path: '/',
-      icon: '📊'
+      icon: faChartBar
     },
     {
       id: 'patients',
       label: 'Patients',
       path: '/patients',
-      icon: '👥'
+      icon: faUsers
     },
     {
       id: 'appointments',
       label: 'Appointments',
       path: '/appointments',
-      icon: '📅'
+      icon: faCalendarAlt
     },
     {
       id: 'medical-records',
       label: 'Medical Records',
       path: '/medical-records',
-      icon: '📋'
+      icon: faClipboardList
     },
     {
       id: 'prescriptions',
       label: 'Prescriptions',
       path: '/prescriptions',
-      icon: '💊'
+      icon: faPills
     },
     {
       id: 'reports',
       label: 'Reports',
       path: '/reports',
-      icon: '📈'
+      icon: faChartLine
     }
   ];
 
@@ -58,7 +60,7 @@ const Sidebar = ({ currentView, onNavigate }) => {
             className={`nav-item ${currentView === item.id ? 'active' : ''}`}
             onClick={() => handleMenuClick(item.path)}
           >
-            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-icon"><FontAwesomeIcon icon={item.icon} /></span>
             {item.label}
           </button>
         ))}

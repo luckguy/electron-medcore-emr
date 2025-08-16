@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faPrint } from '@fortawesome/free-solid-svg-icons';
+
+import { useContext } from 'react';
+import { DataSourceContext } from '../../context/DataSourceContext';
+
+import { patients as mockPatients, prescriptions as mockPrescriptions } from '../../data/mockData';
+
 
 const Prescriptions = () => {
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState('');
+  const { useMockData } = useContext(DataSourceContext);
+
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showNewPrescriptionForm, setShowNewPrescriptionForm] = useState(false);
-  
+
   const [newPrescription, setNewPrescription] = useState({
     patient_id: '',
     medication_name: '',
@@ -38,15 +48,11 @@ const Prescriptions = () => {
   const loadPatients = async () => {
     try {
       setError('');
-      if (window.electronAPI) {
+      if (window.electronAPI && !useMockData) {
         const patientsData = await window.electronAPI.patients.getAll();
-        setPatients(patientsData);
+        setPatients(Array.isArray(patientsData) && patientsData.length ? patientsData : mockPatients);
       } else {
         // Mock data for web development
-        const mockPatients = [
-          { id: '1', first_name: 'John', last_name: 'Doe' },
-          { id: '2', first_name: 'Sarah', last_name: 'Johnson' }
-        ];
         setPatients(mockPatients);
       }
     } catch (error) {
@@ -59,13 +65,13 @@ const Prescriptions = () => {
     try {
       setLoading(true);
       setError('');
-      
-      if (window.electronAPI) {
+
+      if (window.electronAPI && !useMockData) {
         const prescriptionsData = await window.electronAPI.prescriptions.getByPatient(patientId);
         setPrescriptions(prescriptionsData || []);
       } else {
         // Mock data for web development
-        setPrescriptions([]);
+        setPrescriptions(mockPrescriptions.filter(p => p.patient_id === patientId));
       }
     } catch (error) {
       console.error('Error loading prescriptions:', error);
@@ -85,7 +91,7 @@ const Prescriptions = () => {
 
   const handleSubmitNewPrescription = async (e) => {
     e.preventDefault();
-    
+
     if (!newPrescription.medication_name.trim() || !newPrescription.dosage.trim() || !newPrescription.frequency.trim()) {
       setError('Medication name, dosage, and frequency are required.');
       return;
@@ -94,12 +100,12 @@ const Prescriptions = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       if (window.electronAPI) {
         await window.electronAPI.prescriptions.create(newPrescription);
         await loadPrescriptions(selectedPatient);
       }
-      
+
       // Reset form
       setNewPrescription({
         patient_id: selectedPatient,
@@ -133,9 +139,9 @@ const Prescriptions = () => {
         await loadPrescriptions(selectedPatient);
       } else {
         // Mock status change for web development
-        setPrescriptions(prev => 
-          prev.map(p => 
-            p.id === prescriptionId 
+        setPrescriptions(prev =>
+          prev.map(p =>
+            p.id === prescriptionId
               ? { ...p, status: newStatus }
               : p
           )
@@ -166,7 +172,7 @@ const Prescriptions = () => {
           <i>⚠️</i> {error}
         </div>
       )}
-      
+
       {/* Patient Selection */}
       <div className="card mb-2">
         <div className="card-header">
@@ -205,7 +211,7 @@ const Prescriptions = () => {
                   onClick={() => setShowNewPrescriptionForm(!showNewPrescriptionForm)}
                   className="btn btn-primary"
                 >
-                  {showNewPrescriptionForm ? 'Cancel' : '💊 Add New Prescription'}
+                  {showNewPrescriptionForm ? 'Cancel' : (<><FontAwesomeIcon icon={faPlus} /> Add New Prescription</>)}
                 </button>
               </div>
             </div>
@@ -249,7 +255,7 @@ const Prescriptions = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="form-row">
                     <div className="form-col">
                       <div className="form-group">
@@ -291,7 +297,7 @@ const Prescriptions = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="form-row">
                     <div className="form-col">
                       <div className="form-group">
@@ -333,7 +339,7 @@ const Prescriptions = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="form-label">Instructions</label>
                     <textarea
@@ -345,7 +351,7 @@ const Prescriptions = () => {
                       placeholder="Special instructions, warnings, or notes"
                     />
                   </div>
-                  
+
                   <div className="btn-group right">
                     <button
                       type="button"
@@ -440,7 +446,7 @@ const Prescriptions = () => {
                                 title="Print Prescription"
                                 onClick={() => window.print()}
                               >
-                                🖶️
+                                <FontAwesomeIcon icon={faPrint} />
                               </button>
                             </div>
                           </td>

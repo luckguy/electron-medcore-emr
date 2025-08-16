@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUsers, faCalendarAlt, faClock, faPills, faUserPlus, faCalendarPlus, faClipboardList, faChartBar } from '@fortawesome/free-solid-svg-icons';
+import { computeDashboardStats } from '../../data/mockData';
+import { useContext } from 'react';
+import { DataSourceContext } from '../../context/DataSourceContext';
+
+
+
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -8,6 +16,7 @@ const Dashboard = () => {
     upcomingAppointments: 0,
     activePrescriptions: 0
   });
+  const { useMockData } = useContext(DataSourceContext);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,17 +26,20 @@ const Dashboard = () => {
   const loadDashboardStats = async () => {
     try {
       setLoading(true);
-      if (window.electronAPI) {
-        const dashboardStats = await window.electronAPI.dashboard.getStats();
-        setStats(dashboardStats);
+      if (window.electronAPI && !useMockData) {
+        try {
+          const dashboardStats = await window.electronAPI.dashboard.getStats();
+          if (dashboardStats && typeof dashboardStats === 'object') {
+            setStats(dashboardStats);
+          } else {
+            setStats(computeDashboardStats());
+          }
+        } catch (e) {
+          setStats(computeDashboardStats());
+        }
       } else {
         // Mock data for web development
-        setStats({
-          totalPatients: 156,
-          todaysAppointments: 8,
-          upcomingAppointments: 23,
-          activePrescriptions: 45
-        });
+        setStats(computeDashboardStats());
       }
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
@@ -49,34 +61,34 @@ const Dashboard = () => {
     <div className="dashboard">
       <div className="stats-grid">
         <div className="stat-card primary">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon" aria-hidden="true"><FontAwesomeIcon icon={faUsers} /></div>
           <h3>{stats.totalPatients}</h3>
           <p>Total Patients</p>
           <Link to="/patients" className="btn btn-outline btn-sm mt-2">
             View All Patients
           </Link>
         </div>
-        
+
         <div className="stat-card success">
-          <div className="stat-icon">📅</div>
+          <div className="stat-icon" aria-hidden="true"><FontAwesomeIcon icon={faCalendarAlt} /></div>
           <h3>{stats.todaysAppointments}</h3>
           <p>Today's Appointments</p>
           <Link to="/appointments" className="btn btn-outline btn-sm mt-2">
             View Schedule
           </Link>
         </div>
-        
+
         <div className="stat-card warning">
-          <div className="stat-icon">⏰</div>
+          <div className="stat-icon" aria-hidden="true"><FontAwesomeIcon icon={faClock} /></div>
           <h3>{stats.upcomingAppointments}</h3>
           <p>Upcoming Appointments</p>
           <Link to="/appointments/new" className="btn btn-outline btn-sm mt-2">
             Schedule New
           </Link>
         </div>
-        
+
         <div className="stat-card info">
-          <div className="stat-icon">💊</div>
+          <div className="stat-icon" aria-hidden="true"><FontAwesomeIcon icon={faPills} /></div>
           <h3>{stats.activePrescriptions}</h3>
           <p>Active Prescriptions</p>
           <Link to="/prescriptions" className="btn btn-outline btn-sm mt-2">
@@ -92,16 +104,16 @@ const Dashboard = () => {
         <div className="card-body">
           <div className="quick-actions">
             <Link to="/patients/new" className="btn btn-primary btn-lg">
-              🆕 Add New Patient
+              <FontAwesomeIcon icon={faUserPlus} /> Add New Patient
             </Link>
             <Link to="/appointments/new" className="btn btn-success btn-lg">
-              📅 Schedule Appointment
+              <FontAwesomeIcon icon={faCalendarPlus} /> Schedule Appointment
             </Link>
             <Link to="/medical-records" className="btn btn-info btn-lg">
-              📋 View Medical Records
+              <FontAwesomeIcon icon={faClipboardList} /> View Medical Records
             </Link>
             <Link to="/reports" className="btn btn-secondary btn-lg">
-              📊 Generate Reports
+              <FontAwesomeIcon icon={faChartBar} /> Generate Reports
             </Link>
           </div>
         </div>
@@ -117,7 +129,7 @@ const Dashboard = () => {
               <strong>Application Version:</strong> 1.0.0
             </div>
             <div className="info-item">
-              <strong>Database Status:</strong> 
+              <strong>Database Status:</strong>
               <span className="badge badge-success ml-1">Connected</span>
             </div>
             <div className="info-item">

@@ -1,15 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { patients as mockPatients, medicalRecords as mockMedicalRecords } from '../../data/mockData';
+
+import { useContext } from 'react';
+import { DataSourceContext } from '../../context/DataSourceContext';
+
+
 import { format } from 'date-fns';
 
 const MedicalRecords = () => {
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState('');
+  const { useMockData } = useContext(DataSourceContext);
+
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showNewRecordForm, setShowNewRecordForm] = useState(false);
-  
+
   const [newRecord, setNewRecord] = useState({
     patient_id: '',
     visit_date: format(new Date(), 'yyyy-MM-dd'),
@@ -43,15 +53,11 @@ const MedicalRecords = () => {
   const loadPatients = async () => {
     try {
       setError('');
-      if (window.electronAPI) {
+      if (window.electronAPI && !useMockData) {
         const patientsData = await window.electronAPI.patients.getAll();
-        setPatients(patientsData);
+        setPatients(Array.isArray(patientsData) && patientsData.length ? patientsData : mockPatients);
       } else {
         // Mock data for web development
-        const mockPatients = [
-          { id: '1', first_name: 'John', last_name: 'Doe' },
-          { id: '2', first_name: 'Sarah', last_name: 'Johnson' }
-        ];
         setPatients(mockPatients);
       }
     } catch (error) {
@@ -64,13 +70,13 @@ const MedicalRecords = () => {
     try {
       setLoading(true);
       setError('');
-      
-      if (window.electronAPI) {
+
+      if (window.electronAPI && !useMockData) {
         const recordsData = await window.electronAPI.medicalRecords.getByPatient(patientId);
         setMedicalRecords(recordsData || []);
       } else {
         // Mock data for web development
-        setMedicalRecords([]);
+        setMedicalRecords(mockMedicalRecords.filter(r => r.patient_id === patientId));
       }
     } catch (error) {
       console.error('Error loading medical records:', error);
@@ -90,7 +96,7 @@ const MedicalRecords = () => {
 
   const handleSubmitNewRecord = async (e) => {
     e.preventDefault();
-    
+
     if (!newRecord.chief_complaint.trim()) {
       setError('Chief complaint is required.');
       return;
@@ -99,12 +105,12 @@ const MedicalRecords = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       if (window.electronAPI) {
         await window.electronAPI.medicalRecords.create(newRecord);
         await loadMedicalRecords(selectedPatient);
       }
-      
+
       // Reset form
       setNewRecord({
         patient_id: selectedPatient,
@@ -140,7 +146,7 @@ const MedicalRecords = () => {
           <i>⚠️</i> {error}
         </div>
       )}
-      
+
       {/* Patient Selection */}
       <div className="card mb-2">
         <div className="card-header">
@@ -179,7 +185,7 @@ const MedicalRecords = () => {
                   onClick={() => setShowNewRecordForm(!showNewRecordForm)}
                   className="btn btn-primary"
                 >
-                  {showNewRecordForm ? 'Cancel' : '🆕 Add New Record'}
+                  {showNewRecordForm ? 'Cancel' : (<><FontAwesomeIcon icon={faPlus} /> Add New Record</>)}
                 </button>
               </div>
             </div>
@@ -208,7 +214,7 @@ const MedicalRecords = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="form-label">Chief Complaint *</label>
                     <textarea
@@ -221,7 +227,7 @@ const MedicalRecords = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="form-label">History of Present Illness</label>
                     <textarea
@@ -233,7 +239,7 @@ const MedicalRecords = () => {
                       placeholder="Detailed description of the current illness or condition"
                     />
                   </div>
-                  
+
                   {/* Vital Signs */}
                   <h5 className="section-title">Vital Signs</h5>
                   <div className="form-row">
@@ -277,7 +283,7 @@ const MedicalRecords = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="form-row">
                     <div className="form-col">
                       <div className="form-group">
@@ -317,7 +323,7 @@ const MedicalRecords = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="form-label">Physical Examination</label>
                     <textarea
@@ -329,7 +335,7 @@ const MedicalRecords = () => {
                       placeholder="Physical examination findings"
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="form-label">Assessment</label>
                     <textarea
@@ -341,7 +347,7 @@ const MedicalRecords = () => {
                       placeholder="Clinical assessment and diagnosis"
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="form-label">Plan</label>
                     <textarea
@@ -353,7 +359,7 @@ const MedicalRecords = () => {
                       placeholder="Treatment plan and follow-up instructions"
                     />
                   </div>
-                  
+
                   <div className="btn-group right">
                     <button
                       type="button"
@@ -408,22 +414,22 @@ const MedicalRecords = () => {
                             {format(new Date(record.created_at), 'h:mm a')}
                           </span>
                         </div>
-                        
+
                         <div className="record-content">
                           <div className="record-section">
                             <strong>Chief Complaint:</strong>
                             <p>{record.chief_complaint}</p>
                           </div>
-                          
+
                           {record.history_of_present_illness && (
                             <div className="record-section">
                               <strong>History of Present Illness:</strong>
                               <p>{record.history_of_present_illness}</p>
                             </div>
                           )}
-                          
+
                           {/* Vital Signs */}
-                          {(record.height || record.weight || record.blood_pressure || 
+                          {(record.height || record.weight || record.blood_pressure ||
                             record.temperature || record.heart_rate || record.respiratory_rate) && (
                             <div className="record-section">
                               <strong>Vital Signs:</strong>
@@ -437,21 +443,21 @@ const MedicalRecords = () => {
                               </div>
                             </div>
                           )}
-                          
+
                           {record.physical_examination && (
                             <div className="record-section">
                               <strong>Physical Examination:</strong>
                               <p>{record.physical_examination}</p>
                             </div>
                           )}
-                          
+
                           {record.assessment && (
                             <div className="record-section">
                               <strong>Assessment:</strong>
                               <p>{record.assessment}</p>
                             </div>
                           )}
-                          
+
                           {record.plan && (
                             <div className="record-section">
                               <strong>Plan:</strong>
